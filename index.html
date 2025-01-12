@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow SS</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="snowCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("snowCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let snowflakes = [];
+        const snowflakeCount = 300;
+        let background = new Image();
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Snowflake {
+            constructor(x, y, radius, speedX, speedY) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.speedX = speedX;
+                this.speedY = speedY;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "white";
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.y > canvas.height) {
+                    this.y = -this.radius;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+        }
+
+        function initSnowflakes() {
+            snowflakes = [];
+            for (let i = 0; i < snowflakeCount; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const radius = Math.random() * 4 + 2;
+                const speedX = Math.random() * 1 - 0.5;
+                const speedY = Math.random() * 2 + 1;
+                snowflakes.push(new Snowflake(x, y, radius, speedX, speedY));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+            snowflakes.forEach((flake) => {
+                flake.update();
+                flake.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        let isFullscreen = false;
+        let cooldownActive = false;
+
+        function enterFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                isFullscreen = true;
+                cooldownActive = true;
+                setTimeout(() => {
+                    cooldownActive = false;
+                }, 1000);
+            }
+        }
+
+        function exitFullscreen() {
+            if (isFullscreen && !cooldownActive) {
+                document.exitFullscreen();
+                isFullscreen = false;
+            }
+        }
+
+        let lastActivityTime = Date.now();
+
+        function checkInactivity() {
+            const now = Date.now();
+            if (now - lastActivityTime > 5000 && !isFullscreen) {
+                enterFullscreen();
+            }
+            requestAnimationFrame(checkInactivity);
+        }
+
+        function updateLastActivityTime() {
+            lastActivityTime = Date.now();
+        }
+
+        window.addEventListener("mousemove", () => {
+            updateLastActivityTime();
+            exitFullscreen();
+        });
+
+        window.addEventListener("keydown", (event) => {
+            updateLastActivityTime();
+            if ((event.code === "Space" || event.code === "KeyE") && !isFullscreen) {
+                enterFullscreen();
+            } else {
+                exitFullscreen();
+            }
+        });
+
+
+        window.addEventListener("resize", resizeCanvas);
+
+        background.src = "https://www.wallpaper.cz/primo/ir2/zima_v_coloradu--c1920xc1080.jpg";
+        background.onload = () => {
+            resizeCanvas();  
+            initSnowflakes();
+            animate();
+        };
+
+        background.onerror = () => {
+            console.error("Obrázek pozadí se nepodařilo načíst.");
+        };
+
+        checkInactivity();
+    </script>
+</body>
+</html>
